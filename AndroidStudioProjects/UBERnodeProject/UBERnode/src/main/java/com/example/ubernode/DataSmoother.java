@@ -12,22 +12,16 @@ public class DataSmoother {
     private static float[] data = {0, 0, 0};
 
     //Parametri di Smoothing
-    
-    private static float accuracy = 1f;
     //UpsetZ
     private static float upsetLimit = 4f;
     //MagneticPoint
     private static float radius = 2f;
-    //WeightSmoothing
-    private static float previousWeight = 0.6f;
-    private static float newWeight = 0.4f;
     //Boundary
     private static float limit = 6.5f;
-    //Cropping
-    private static int decimalNumbers = 2;
     //Normalize
     private static float upperValue = 10f;
-    private static float lowerValue = 0f;
+    //Stepper
+    private static float step = 0.5f;
 
     //Temp
     private static float normalize_max;
@@ -41,61 +35,19 @@ public class DataSmoother {
         //Raw data
         ndata = new float[3]; ndata[0]=x; ndata[1]=y; ndata[2]=z;
         //Applying smoothing policies
-        //Precision
-        //precisionNoiseAvoid();
-        stepper();
         //First (upsetZ)
         upsetZ(z);
         //Others
         invertSignum();
         magneticPoint();
-        //boundary();
-
-        //normalize();
-        cropping();
-        //Last (weightSmoothing)
-        //weightSmoothing();
+        boundary();
+        normalize();
+        stepper();
         //Update official data
         data = Arrays.copyOf(ndata, 3);
-        //data = ndata;
         //Return data
         return ndata;
     }//smooth
-
-    private static void stepper(){
-        float step = 0.5f;
-        ndata[0] = ((float) ( ((int)ndata[0]/step)*step ) );
-        ndata[1] = ((float) ( ((int)ndata[1]/step)*step ) );
-        ndata[2] = ((float) ( ((int)ndata[2]/step)*step ) );
-    }//
-
-    /*
-    private static void precisionNoiseAvoid(){
-        if( Math.signum(data[0]) == Math.signum(ndata[0]) ){
-            if( Math.abs( Math.abs(data[0]) - Math.abs(ndata[0]) ) < accuracy ){
-                ndata[0] = data[0];
-            }
-        }
-        if( Math.signum(data[1]) == Math.signum(ndata[1]) ){
-            if( Math.abs( Math.abs(data[1]) - Math.abs(ndata[1]) ) < accuracy ){
-                ndata[1] = data[1];
-            }
-        }
-        if( Math.signum(data[2]) == Math.signum(ndata[2]) ){
-            if( Math.abs( Math.abs(data[2]) - Math.abs(ndata[2]) ) < accuracy ){
-                ndata[2] = data[2];
-            }
-        }
-
-        //error = Math.abs( Math.abs(data[2]) - Math.abs(ndata[2]) );
-        //error = Math.abs(Math.abs(data[2]) - Math.abs(ndata[2]));
-
-        if( Math.abs( Math.abs(data[2]) - Math.abs(ndata[2]) ) < accuracy ){
-            ndata[2] = data[2];
-        }
-
-    }//precisionNoiseAvoid
-    */
 
     private static void upsetZ(float z){
         if(z <= upsetLimit){
@@ -128,12 +80,6 @@ public class DataSmoother {
         }
     }//boundary
 
-    private static void cropping(){
-        ndata[0] = round(ndata[0], decimalNumbers);
-        ndata[1] = round(ndata[1], decimalNumbers);
-        ndata[2] = round(ndata[2], decimalNumbers);
-    }//cropping
-
     private static void normalize(){
         //max reachable value
         normalize_max = limit - radius;
@@ -155,10 +101,11 @@ public class DataSmoother {
         }
     }//normalize
 
-    private static void weightSmoothing(){
-        ndata[0] = data[0]*previousWeight + ndata[0]*newWeight;
-        ndata[1] = data[1]*previousWeight + ndata[1]*newWeight;
-    }//weightSmoothing
+    private static void stepper(){
+        ndata[0] = ((float) ( ((int)ndata[0]/step)*step ) );
+        ndata[1] = ((float) ( ((int)ndata[1]/step)*step ) );
+        ndata[2] = round( ndata[2], 2 );
+    }//stepper
 
 
 
