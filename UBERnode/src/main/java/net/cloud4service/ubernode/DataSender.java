@@ -1,9 +1,10 @@
-package com.example.ubernode;
+package net.cloud4service.ubernode;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.Semaphore;
 
@@ -42,13 +43,26 @@ public class DataSender implements PerformedByClock{
 
 
     public void connect(){
+        //verify reachability
+        try {
+            long currentTime = System.currentTimeMillis();
+            if( !InetAddress.getByName(ipAddress).isReachable(1000) ){
+                console.printToConsole("Host "+ipAddress+" is unreachable! Test your connection.\n");
+                return;
+            }
+            console.printToConsole("Host "+ipAddress+" is reachable: "+(System.currentTimeMillis()-currentTime)+"ms latency");
+        } catch (IOException e) {
+            console.printToConsole(e.toString());
+            return;
+        }
+        //Host successfully reached
         try{
             //Creo il Socket
             socket = new Socket(ipAddress, port);
             console.printToConsole("Connecting to: "+ipAddress+":"+port);
             outputStream = socket.getOutputStream();
             bufferedWriter = new BufferedWriter( new OutputStreamWriter( outputStream ) );
-            console.printToConsole("Connection established!");
+            console.printToConsole("Connection established!\n");
             isConnected = true;
         }catch(Exception e){
             isConnected = false;

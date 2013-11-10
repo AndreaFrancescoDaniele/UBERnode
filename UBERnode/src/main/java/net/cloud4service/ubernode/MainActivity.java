@@ -1,4 +1,4 @@
-package com.example.ubernode;
+package net.cloud4service.ubernode;
 
         import android.app.Activity;
         import android.content.SharedPreferences;
@@ -10,6 +10,7 @@ package com.example.ubernode;
         import android.os.Bundle;
         import android.preference.PreferenceManager;
         import android.view.View;
+        import android.view.WindowManager;
         import android.widget.ProgressBar;
         import android.widget.ScrollView;
         import android.widget.TextView;
@@ -17,6 +18,8 @@ package com.example.ubernode;
         import android.widget.ViewSwitcher;
 
         import java.math.BigDecimal;
+        import java.text.SimpleDateFormat;
+        import java.util.Date;
         import java.util.LinkedList;
         import java.util.concurrent.Semaphore;
 
@@ -30,8 +33,10 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     private boolean canUpdateCoordinates = false;
     private SensorsStatus sensorsStatusEnum;
     private ConnectionStatus connectionStatusEnum;
+    private ActiveView activeViewEnum;
     private final int calibrationDuration = 3000; //3000 mS = 3 sec
     private int calibrationProgress = 1; //at the end, the value will be: 3001 mS
+    private boolean connectionAllowed = false;
 
     //Other objects
     private SensorManager sensorManager;
@@ -41,6 +46,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     private LinkedList<String> consoleBuffer;
     private String sensorsStatusString;
     private String connectionStatusString;
+    private SimpleDateFormat simpleDateFormat;
 
     //Graphic object
     private TextView xCoor;
@@ -88,6 +94,8 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         //=>Default Code
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        activeViewEnum = ActiveView.MAIN;
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         //<=Default Code
         //==================================
         //=>My Code
@@ -97,6 +105,8 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         connectionStatusString = getString(R.string.net_notconnected);
         //Concurrency
         consoleSemaphore = new Semaphore(1);
+        //Others objects
+        simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
         //Get graphic objects
         xCoor = (TextView)findViewById(R.id.xCoor);
         yCoor = (TextView)findViewById(R.id.yCoor);
@@ -161,7 +171,6 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         super.onPause();
     }//onPause
 
-
     @Override
     public void onResume(){
         super.onResume();
@@ -170,13 +179,21 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         pitchEnabled = true;
     }//onPause
 
-
     @Override
     public void onStop(){
         //Close connection
         dataSender.close();
         super.onStop();
     }//onPause
+
+    @Override
+    public void onBackPressed(){
+        if(activeViewEnum == ActiveView.SETTINGS){
+            onSettingsCloseClick(null);
+        }else{
+            super.onBackPressed();
+        }
+    }//onBackPressed
 
 
 
@@ -191,11 +208,18 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
             dataSenderAndAppender.clearPerformersList();
             dataSenderAndAppender.addPerformer(dataSender);
         }
-        dataSender.connect();
+        if(connectionAllowed){
+            dataSender.connect();
+        }
     }//switchToReadyState
 
     public void onSettingsClick(View view){
+        //disable axis
+        rollEnabled = false;
+        pitchEnabled = false;
+        //change view
         viewSwitcher.showNext();
+        activeViewEnum = ActiveView.SETTINGS;
         if( !readStringFromSettings("upsetLimit").equals("null") ){
             refillSettingsFields();
         }
@@ -210,12 +234,17 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
                 dataSender.close();
             }
             dataSender = null;
+            connectionAllowed = true;
         }
         onSettingsCloseClick(null); //close Settings
     }//onSettingsConnectClick
 
     public void onSettingsCloseClick(View view){
         viewSwitcher.showPrevious();
+        activeViewEnum = ActiveView.MAIN;
+        //enable axis
+        rollEnabled = true;
+        pitchEnabled = true;
     }//onSettingsCloseClick
 
     public void onSettingsSaveClick(View view){
@@ -385,7 +414,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         try {
             consoleSemaphore.acquire();
             //=> Sezione critica
-            consoleBuffer.add(message);
+            consoleBuffer.add("["+simpleDateFormat.format(new Date())+"] "+message);
             //<= Sezione critica
             consoleSemaphore.release();
         } catch (InterruptedException e) {
@@ -418,8 +447,10 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
             }
         }else if(sensorsStatusEnum == SensorsStatus.SENDING_DATA){
             if(dataSender == null){
-                //Connect
-                switchToReadyState(); //to reconnect
+                if(connectionAllowed){
+                    //Connect
+                    switchToReadyState(); //to reconnect
+                }
             }
             //connection lost?
             if( !dataSender.isConnected() ){
@@ -427,8 +458,10 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
             }else{
                 connectionStatusEnum = ConnectionStatus.CONNECTED;
             }
-            //Send new data to dataSender
-            dataSender.appendData( buildMessage() );
+            if(dataSender != null){
+                //Send new data to dataSender
+                dataSender.appendData( buildMessage() );
+            }
         }
         //With any clock speed
         canUpdateCoordinates = true;

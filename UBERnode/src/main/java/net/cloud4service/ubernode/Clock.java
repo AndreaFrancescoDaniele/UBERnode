@@ -1,8 +1,5 @@
-package com.example.ubernode;
+package net.cloud4service.ubernode;
 
-
-import android.app.Activity;
-import android.view.View;
 
 import java.util.LinkedList;
 

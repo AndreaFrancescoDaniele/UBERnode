@@ -1,4 +1,4 @@
-package com.example.ubernode;
+package net.cloud4service.ubernode;
 
 /**
  * Created by andrea on 11/8/13.

@@ -1,4 +1,6 @@
-package com.example.ubernode;
+package net.cloud4service.ubernode;
+
+import android.preference.Preference;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -26,6 +28,11 @@ public class DataSmoother {
     //Temp
     private static float normalize_max;
     private static float normalize_sign;
+
+
+    private DataSmoother(){} //lock default constructor
+
+    //public DataSmoother(Preference)
 
 
     //New received data
