@@ -1,14 +1,12 @@
 package net.cloud4service.ubernode;
 
         import android.app.Activity;
-        import android.content.SharedPreferences;
         import android.graphics.Color;
         import android.hardware.Sensor;
         import android.hardware.SensorEvent;
         import android.hardware.SensorEventListener;
         import android.hardware.SensorManager;
         import android.os.Bundle;
-        import android.preference.PreferenceManager;
         import android.view.View;
         import android.view.WindowManager;
         import android.widget.ProgressBar;
@@ -41,12 +39,11 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     //Other objects
     private SensorManager sensorManager;
     private DataSender dataSender;
-    private SharedPreferences preferences;
-    private SharedPreferences.Editor preferencesEditor;
     private LinkedList<String> consoleBuffer;
     private String sensorsStatusString;
     private String connectionStatusString;
     private SimpleDateFormat simpleDateFormat;
+    private AppPreferences appPreferences;
 
     //Graphic object
     private TextView xCoor;
@@ -75,7 +72,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     private final float sett_upsetLimit = 4.0f;
     private final float sett_radius = 2.0f;
     private final float sett_limit = 6.5f;
-    private final float sett_upperValue = 10.0f;
+    private final float sett_upperValue = 10f;
     private final float sett_step = 0.5f;
 
     //ClocksTimes
@@ -94,19 +91,9 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         //=>Default Code
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        activeViewEnum = ActiveView.MAIN;
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         //<=Default Code
         //==================================
         //=>My Code
-        sensorsStatusEnum = SensorsStatus.OFFLINE;
-        connectionStatusEnum = ConnectionStatus.NOT_CONNECTED;
-        sensorsStatusString = getString(R.string.sensors_offline);
-        connectionStatusString = getString(R.string.net_notconnected);
-        //Concurrency
-        consoleSemaphore = new Semaphore(1);
-        //Others objects
-        simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
         //Get graphic objects
         xCoor = (TextView)findViewById(R.id.xCoor);
         yCoor = (TextView)findViewById(R.id.yCoor);
@@ -127,6 +114,26 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         limit = (TextView)findViewById(R.id.limit);
         upperValue = (TextView)findViewById(R.id.upperValue);
         step = (TextView)findViewById(R.id.step);
+        //Enum e States
+        activeViewEnum = ActiveView.MAIN;
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        sensorsStatusEnum = SensorsStatus.OFFLINE;
+        connectionStatusEnum = ConnectionStatus.NOT_CONNECTED;
+        sensorsStatusString = getString(R.string.sensors_offline);
+        connectionStatusString = getString(R.string.net_notconnected);
+        //Create preferences
+        appPreferences = new AppPreferences(this);
+        //send preferences to DataSmoother
+        DataSmoother.setAppPreferences( appPreferences );
+        if( appPreferences.contains("preferencesWrittenFlag") ){
+            //settings redefined by user
+            DataSmoother.reloadParameters();
+            preferencesUpdated( appPreferences.readString("upperValue") );
+        }
+        //Concurrency
+        consoleSemaphore = new Semaphore(1);
+        //Others objects
+        simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
         //create consoleBuffer
         consoleBuffer = new LinkedList<String>();
         //Create dataSender
@@ -152,12 +159,10 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
                 sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
                 SensorManager.SENSOR_DELAY_NORMAL);
         //Update status and labels
-        printToConsole(getString(R.string.mode_calibrating)+"\n");
+        printToConsole(getString(R.string.calibration_mode));
+        printToConsole(getString(R.string.calibration_mode_warning)+"\n");
         sensorsStatusString = getString(R.string.sensors_calibrating);
         sensorsStatusEnum = SensorsStatus.CALIBRATING;
-        //Create the Preferences file
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        preferencesEditor = preferences.edit();
         //<=My Code
         //==================================
     }//onCreate
@@ -191,7 +196,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         if(activeViewEnum == ActiveView.SETTINGS){
             onSettingsCloseClick(null);
         }else{
-            super.onBackPressed();
+            finish();
         }
     }//onBackPressed
 
@@ -204,7 +209,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     private void switchToReadyState(){
         sensorsStatusEnum = SensorsStatus.SENDING_DATA;
         if(dataSender == null){
-            dataSender = new DataSender( this, readStringFromSettings("rosNodeIP"), (int)readFloatFromSettings("rosNodePort") );
+            dataSender = new DataSender( this, appPreferences.readString("rosNodeIP"), (int)appPreferences.readFloat("rosNodePort") );
             dataSenderAndAppender.clearPerformersList();
             dataSenderAndAppender.addPerformer(dataSender);
         }
@@ -220,15 +225,16 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         //change view
         viewSwitcher.showNext();
         activeViewEnum = ActiveView.SETTINGS;
-        if( !readStringFromSettings("upsetLimit").equals("null") ){
+        if( appPreferences.contains("preferencesWrittenFlag") ){
             refillSettingsFields();
         }
     }//onSettingsClick
 
     public void onSettingsConnectClick(View view){
         //Connect dataSender
-        writeToSettings( "rosNodeIP", rosNodeIP.getText().toString() );
-        writeToSettings( "rosNodePort", rosNodePort.getText().toString() );
+        appPreferences.writeString( "rosNodeIP", rosNodeIP.getText().toString() );
+        appPreferences.writeString( "rosNodePort", rosNodePort.getText().toString() );
+        appPreferences.commitChanges();
         if( connectionStatusEnum == ConnectionStatus.NOT_CONNECTED ){
             if(dataSender != null){
                 dataSender.close();
@@ -249,37 +255,53 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
 
     public void onSettingsSaveClick(View view){
         //Update settings
-        writeToSettings( "rosNodeIP", rosNodeIP.getText().toString() );
-        writeToSettings( "rosNodePort", rosNodePort.getText().toString() );
-        writeToSettings( "upsetLimit", upsetLimit.getText().toString() );
-        writeToSettings( "radius", radius.getText().toString() );
-        writeToSettings( "limit", limit.getText().toString() );
-        writeToSettings( "upperValue", upperValue.getText().toString() );
-        writeToSettings( "step", step.getText().toString() );
+        appPreferences.writeString( "rosNodeIP", rosNodeIP.getText().toString() );
+        appPreferences.writeString( "rosNodePort", rosNodePort.getText().toString() );
+        appPreferences.writeString( "upsetLimit", upsetLimit.getText().toString() );
+        appPreferences.writeString( "radius", radius.getText().toString() );
+        appPreferences.writeString( "limit", limit.getText().toString() );
+        appPreferences.writeString( "upperValue", upperValue.getText().toString() );
+        appPreferences.writeString( "step", step.getText().toString() );
+        appPreferences.commitChanges();
+        preferencesUpdated( upperValue.getText().toString()/*progBarMax*/ );
+        DataSmoother.reloadParameters();
     }//onSettingsSaveClick
 
     public void onRestoreDefaultButtonClick(View view){
         //Restore default setting values
-        writeToSettings( "rosNodeIP", sett_rosNodeIP );
-        writeToSettings( "rosNodePort", sett_rosNodePort+"" );
-        writeToSettings( "upsetLimit", sett_upsetLimit+"" );
-        writeToSettings( "radius", sett_radius+"" );
-        writeToSettings( "limit", sett_limit+"" );
-        writeToSettings( "upperValue", sett_upperValue+"" );
-        writeToSettings( "step", sett_step+"" );
+        appPreferences.writeString( "rosNodeIP", sett_rosNodeIP );
+        appPreferences.writeString( "rosNodePort", sett_rosNodePort+"" );
+        appPreferences.writeString( "upsetLimit", sett_upsetLimit+"" );
+        appPreferences.writeString( "radius", sett_radius+"" );
+        appPreferences.writeString( "limit", sett_limit+"" );
+        appPreferences.writeString( "upperValue", sett_upperValue+"" );
+        appPreferences.writeString( "step", sett_step+"" );
+        appPreferences.commitChanges();
+        preferencesUpdated( sett_upperValue+""/*progBarMax*/ );
+        DataSmoother.reloadParameters();
         refillSettingsFields();
     }//onRestoreDefaultButtonClick
 
     private void refillSettingsFields(){
         //Refill settings
-        rosNodeIP.setText( readStringFromSettings("rosNodeIP") );
-        rosNodePort.setText( readStringFromSettings("rosNodePort") );
-        upsetLimit.setText( readStringFromSettings("upsetLimit") );
-        radius.setText( readStringFromSettings("radius") );
-        limit.setText( readStringFromSettings("limit") );
-        upperValue.setText( readStringFromSettings("upperValue") );
-        step.setText( readStringFromSettings("step") );
+        rosNodeIP.setText( appPreferences.readString("rosNodeIP") );
+        rosNodePort.setText( appPreferences.readString("rosNodePort") );
+        upsetLimit.setText( appPreferences.readString("upsetLimit") );
+        radius.setText( appPreferences.readString("radius") );
+        limit.setText( appPreferences.readString("limit") );
+        upperValue.setText( appPreferences.readString("upperValue") );
+        step.setText( appPreferences.readString("step") );
     }//refillSettingsFields
+
+    private void preferencesUpdated(String progBarMax){
+        //make the progress bars adequate to the upperLimit
+        int max = (int)sett_upperValue;
+        try{
+            max = (int) Float.parseFloat(progBarMax);
+        }catch(Exception e){/*do nothing*/}
+        xCoorProgressBar.setMax( max );
+        yCoorProgressBar.setMax( max );
+    }//preferencesUpdated
 
     public void onRollToggleClicked(View view){
         boolean flag = ((ToggleButton) view).isChecked();
@@ -358,27 +380,6 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     }//refreshDataOnScreen
 
 
-
-    //Settings Methods
-    private String readStringFromSettings(String key){
-        return preferences.getString(key,"null");
-    }//readStringFromSettings
-
-    private float readFloatFromSettings(String key){
-        //Read float value
-        try{
-            return Float.parseFloat( readStringFromSettings(key) );
-        }catch(NumberFormatException e){
-            return -1f;
-        }
-    }//readStringFromSettings
-
-    private void writeToSettings(String key, String value){
-        preferencesEditor.putString(key,value);
-        preferencesEditor.commit();
-    }//writeToSettings
-
-
     //Utility Methods
     private float round(float d, int decimalPlace) {
         BigDecimal bd = new BigDecimal(Float.toString(d));
@@ -440,6 +441,8 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
                 sensorsStatusString = getString(R.string.sensors_calibrating)+"  "+round(((float)calibrationProgress)/1000, 2)+" sec";
                 if (calibrationProgress > calibrationDuration) {
                     //calibration complete
+                    printToConsole(getString(R.string.calibration_mode_complete)+"\n");
+                    //change appState
                     switchToReadyState();
                     //change clock speed
                     calibrationController.setClockDuration(clock70ms);

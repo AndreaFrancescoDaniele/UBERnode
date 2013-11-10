@@ -7,8 +7,9 @@
 
     <string name="app_launched">Application started!</string>
 
-    <string name="mode_calibrating">Calibrating... keep the device in (0,0) for about 3 seconds!</string>
-    <string name="mode_ready">Application ready!</string>
+    <string name="calibration_mode">Calibrating... </string>
+    <string name="calibration_mode_warning">keep the device in (0,0) for about 3 seconds!</string>
+    <string name="calibration_mode_complete">Calibration complete!</string>
 
 
     <string name="action_settings">Settings</string>

@@ -1,7 +1,5 @@
 package net.cloud4service.ubernode;
 
-import android.preference.Preference;
-
 import java.math.BigDecimal;
 import java.util.Arrays;
 
@@ -10,10 +8,15 @@ import java.util.Arrays;
  */
 public class DataSmoother {
 
+    //Objects
+    private static AppPreferences appPreferences;
+
     //Official data
     private static float[] data = {0, 0, 0};
+    //New received data
+    private static float[] ndata;
 
-    //Parametri di Smoothing
+    //Smoothing Parameters
     //UpsetZ
     private static float upsetLimit = 4f;
     //MagneticPoint
@@ -29,15 +32,7 @@ public class DataSmoother {
     private static float normalize_max;
     private static float normalize_sign;
 
-
-    private DataSmoother(){} //lock default constructor
-
-    //public DataSmoother(Preference)
-
-
-    //New received data
-    private static float[] ndata;
-
+    //Methods
     public static float[] smooth(float x, float y, float z){
         //Raw data
         ndata = new float[3]; ndata[0]=x; ndata[1]=y; ndata[2]=z;
@@ -109,12 +104,10 @@ public class DataSmoother {
     }//normalize
 
     private static void stepper(){
-        ndata[0] = ((float) ( ((int)ndata[0]/step)*step ) );
-        ndata[1] = ((float) ( ((int)ndata[1]/step)*step ) );
+        ndata[0] = ((int)ndata[0]/step)*step;
+        ndata[1] = ((int)ndata[1]/step)*step;
         ndata[2] = round( ndata[2], 2 );
     }//stepper
-
-
 
 
     //=================
@@ -124,5 +117,20 @@ public class DataSmoother {
         bd = bd.setScale(decimalPlace, BigDecimal.ROUND_HALF_UP);
         return bd.floatValue();
     }//round
+
+    //Configuration methods
+    public static void setAppPreferences(AppPreferences ap){
+        appPreferences = ap;
+    }//setAppPreferences
+
+    public static void reloadParameters(){
+        if(appPreferences != null){
+            upsetLimit = appPreferences.readFloat("upsetLimit");
+            radius = appPreferences.readFloat("radius");
+            limit = appPreferences.readFloat("limit");
+            upperValue = appPreferences.readFloat("upperValue");
+            step = appPreferences.readFloat("step");
+        }
+    }//reloadParametersFromPreferences
 
 }//DataSmoother

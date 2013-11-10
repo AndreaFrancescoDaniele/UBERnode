@@ -33,7 +33,7 @@ public class Receiver {
 			System.out.println("Richiesta di connessione dal client "+client+"...");
 			InputStream is = s.getInputStream();
 			BufferedReader br = new BufferedReader( new InputStreamReader( is ) );
-			while(true){
+			while(s.isConnected()){
 				Thread.sleep(50);
 				if( br.ready() ){
 					System.out.println( br.readLine() );
