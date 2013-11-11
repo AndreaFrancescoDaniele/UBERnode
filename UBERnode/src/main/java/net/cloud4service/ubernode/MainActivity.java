@@ -1,25 +1,26 @@
 package net.cloud4service.ubernode;
 
-        import android.app.Activity;
-        import android.graphics.Color;
-        import android.hardware.Sensor;
-        import android.hardware.SensorEvent;
-        import android.hardware.SensorEventListener;
-        import android.hardware.SensorManager;
-        import android.os.Bundle;
-        import android.view.View;
-        import android.view.WindowManager;
-        import android.widget.ProgressBar;
-        import android.widget.ScrollView;
-        import android.widget.TextView;
-        import android.widget.ToggleButton;
-        import android.widget.ViewSwitcher;
+import android.app.Activity;
+import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.ToggleButton;
+import android.widget.ViewSwitcher;
 
-        import java.math.BigDecimal;
-        import java.text.SimpleDateFormat;
-        import java.util.Date;
-        import java.util.LinkedList;
-        import java.util.concurrent.Semaphore;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.concurrent.Semaphore;
 
 public class MainActivity extends Activity implements SensorEventListener, PerformedByClock, Console {
 
@@ -65,6 +66,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     private TextView limit;
     private TextView upperValue;
     private TextView step;
+    private Button connectionButton;
 
     //Default settings
     private final String sett_rosNodeIP = "192.168.43.124";
@@ -73,7 +75,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     private final float sett_radius = 2.0f;
     private final float sett_limit = 6.5f;
     private final float sett_upperValue = 10f;
-    private final float sett_step = 0.5f;
+    private final float sett_step = 1.0f;
 
     //ClocksTimes
     private final int clock100ms = 100; //100mS = 1/10 sec | CalibrationController
@@ -114,6 +116,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         limit = (TextView)findViewById(R.id.limit);
         upperValue = (TextView)findViewById(R.id.upperValue);
         step = (TextView)findViewById(R.id.step);
+        connectionButton = (Button) findViewById(R.id.connectButton);
         //Enum e States
         activeViewEnum = ActiveView.MAIN;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -187,7 +190,9 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     @Override
     public void onStop(){
         //Close connection
-        dataSender.close();
+        if (dataSender != null) {
+            dataSender.close();
+        }
         super.onStop();
     }//onPause
 
@@ -235,14 +240,15 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         appPreferences.writeString( "rosNodeIP", rosNodeIP.getText().toString() );
         appPreferences.writeString( "rosNodePort", rosNodePort.getText().toString() );
         appPreferences.commitChanges();
-        if( connectionStatusEnum == ConnectionStatus.NOT_CONNECTED ){
-            if(dataSender != null){
-                dataSender.close();
-            }
-            dataSender = null;
-            connectionAllowed = true;
+        //Prepare connection
+        if (dataSender != null) {
+            dataSender.close();
         }
-        onSettingsCloseClick(null); //close Settings
+        dataSender = null;
+        //Connect OR Disconnect?
+        connectionAllowed = (connectionStatusEnum == ConnectionStatus.NOT_CONNECTED);
+        //close Settings view
+        onSettingsCloseClick(null);
     }//onSettingsConnectClick
 
     public void onSettingsCloseClick(View view){
@@ -370,9 +376,11 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
         if(connectionStatusEnum == ConnectionStatus.CONNECTED){
             connectionStatusString = getString(R.string.net_connected);
             connectionStatus.setTextColor(Color.GREEN);
+            connectionButton.setText("Disconnect!");
         }else{
             connectionStatusString = getString(R.string.net_notconnected);
             connectionStatus.setTextColor(Color.BLACK);
+            connectionButton.setText("Connect!");
         }
         //Labels
         sensorsStatus.setText( sensorsStatusString );
@@ -395,13 +403,13 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
                 //there is something to print
                 if (console != null) {
                     for (String s : consoleBuffer) {
-                        scrollDown();
                         console.append(s + "\n");
-                        scrollDown();
                     }
                     consoleBuffer.clear();
                 }
             }
+            //Update scroll position
+            scrollDown();
             //<= Sezione critica
             consoleSemaphore.release();
         } catch (InterruptedException e) {
@@ -425,7 +433,8 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
     }//flushDataToConsole
 
     private void scrollDown() {
-        scroller.scrollTo(0, console.getBottom());
+        //scroller.scrollTo(0, console.getBottom()+24);
+        scroller.fullScroll(View.FOCUS_DOWN);
     }//scrollDown
 
     @Override
@@ -456,7 +465,7 @@ public class MainActivity extends Activity implements SensorEventListener, Perfo
                 }
             }
             //connection lost?
-            if( !dataSender.isConnected() ){
+            if (dataSender == null || !dataSender.isConnected()) {
                 connectionStatusEnum = ConnectionStatus.NOT_CONNECTED;
             }else{
                 connectionStatusEnum = ConnectionStatus.CONNECTED;

@@ -67,7 +67,7 @@ public class DataSender implements PerformedByClock{
         }catch(Exception e){
             isConnected = false;
             if(socket == null){
-                console.printToConsole("Connection to: "+ipAddress+":"+port+" failed!");
+                console.printToConsole("Connection to: " + ipAddress + ":" + port + " failed!\n");
             }
             //Do nothing
             return;
@@ -99,7 +99,7 @@ public class DataSender implements PerformedByClock{
                 bufferedWriter.flush();
             } catch (IOException e) {
                 //do nothing
-                console.printToConsole("Connection lost!");
+                console.printToConsole("Connection lost!\n");
                 isConnected = false;
                 //close connection
                 close();

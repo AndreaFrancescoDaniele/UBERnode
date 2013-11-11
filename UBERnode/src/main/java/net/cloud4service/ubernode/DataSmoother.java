@@ -26,7 +26,7 @@ public class DataSmoother {
     //Normalize
     private static float upperValue = 10f;
     //Stepper
-    private static float step = 0.5f;
+    private static float step = 1.0f;
 
     //Temp
     private static float normalize_max;
@@ -104,8 +104,8 @@ public class DataSmoother {
     }//normalize
 
     private static void stepper(){
-        ndata[0] = ((int)ndata[0]/step)*step;
-        ndata[1] = ((int)ndata[1]/step)*step;
+        ndata[0] = ((float) (round((ndata[0] / step), 0) * step));
+        ndata[1] = ((float) (round((ndata[1] / step), 0) * step));
         ndata[2] = round( ndata[2], 2 );
     }//stepper
 
