@@ -1,4 +1,4 @@
-package net.cloud4service.ubernode;
+package it.uniroma1.ubernode;
 
 import android.content.Context;
 import android.content.SharedPreferences;

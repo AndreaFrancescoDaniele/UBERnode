@@ -1,4 +1,4 @@
-package net.cloud4service.ubernode;
+package it.uniroma1.ubernode;
 
 
 import java.util.LinkedList;
@@ -6,28 +6,29 @@ import java.util.LinkedList;
 /**
  * Created by andrea on 11/5/13.
  */
-public class Clock extends Thread{
+public class Clock extends Thread {
 
     private int clock = 1000; //100mS = 0.1S
     private LinkedList<PerformedByClock> list = new LinkedList<PerformedByClock>();
 
-    private Clock(){} //Lock default constructor
+    private Clock() {
+    } //Lock default constructor
 
-    public Clock(int clockTimeMillis){
+    public Clock(int clockTimeMillis) {
         clock = clockTimeMillis;
     }//Clock
 
-    public void setClockDuration(int clockTimeMillis){
+    public void setClockDuration(int clockTimeMillis) {
         clock = clockTimeMillis;
     }//setClockDuration
 
-    public void addPerformer(PerformedByClock obj){
-        if(!list.contains(obj)){
+    public void addPerformer(PerformedByClock obj) {
+        if (!list.contains(obj)) {
             list.add(obj);
         }
     }//addPerformer
 
-    public void clearPerformersList(){
+    public void clearPerformersList() {
         list.clear();
     }//clearPerformersList
 
@@ -39,8 +40,8 @@ public class Clock extends Thread{
                 //Wait for a time-step
                 Thread.sleep(clock);
                 //Do something
-                for(PerformedByClock pbc:list){
-                    if(pbc != null){
+                for (PerformedByClock pbc : list) {
+                    if (pbc != null) {
                         pbc.perform();
                     }
                 }

@@ -1,4 +1,4 @@
-package net.cloud4service.ubernode;
+package it.uniroma1.ubernode;
 
 /**
  * Created by andrea on 11/6/13.
