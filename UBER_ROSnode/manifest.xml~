@@ -1,0 +1,14 @@
+<package>
+  <description brief="uber">
+
+     uber
+
+  </description>
+  <author>Andrea Francesco Daniele</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/uber</url>
+
+</package>
+
+

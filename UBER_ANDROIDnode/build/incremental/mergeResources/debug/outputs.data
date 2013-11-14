@@ -1,0 +1,12 @@
+# incremental data. DO NOT EDIT.
+# format is <lastModified> <length> <SHA-1> <path>
+# Encoding is UTF-8
+1384428260000 1705 0417675a37d98b4a02bb912d0fb811686b9635b0 /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/drawable-mdpi/ic_launcher.png
+1384428260000 3354 7d73da9c53954b791fa4d00b5bed5d0411fc7873 /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/drawable-xhdpi/ic_launcher.png
+1384428260000 2452 3fb81228e5a8494f641c36512322bde1366d5be9 /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/drawable-hdpi/ic_launcher.png
+1384428260000 5311 46a15a14db621aa16a81913d3855fca87950db49 /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/drawable-xxhdpi/ic_launcher.png
+1384428260000 2226 48110774684ab40e715fff7c33c545cefe99abbe /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/values/values.xml
+1384428260000 635 04d0c73ef0881ee4d748c09e43e80da5646e98bd /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/layout/fragment_main.xml
+1384428260000 19744 a648f291ae70cb1e7a3321dc447c4543a69b98e7 /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/layout/activity_main.xml
+1384428260000 264 c18bd9c52f25c5b9c8940455ff62571bb1b9bb7b /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/menu/main.xml
+1384428260000 265 4daa48e462765634b5f4addda2c14c93233a73de /media/Archivio/Lavoro/Projects/UBERnode/UBER_ANDROIDnode/build/res/all/debug/values-w820dp/values.xml
